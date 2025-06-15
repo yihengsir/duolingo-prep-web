@@ -1,0 +1,174 @@
+/* style.css - Duolingo DET Prep Custom Styles */
+
+/* 全局应用 box-sizing 以确保一致的布局行为 */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* body 样式 */
+body {
+  /* 字体将由 index.html 中的内联 <style> 和 Tailwind 控制 */
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f3f4f6; /* 浅灰色背景 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* 确保占据整个视口高度 */
+}
+
+/* 基础按钮样式 */
+.button-base {
+  padding: 0.75rem 1.5rem; /* 内边距 */
+  border-radius: 0.5rem; /* 圆角 */
+  font-weight: 600; /* 半粗字体 */
+  transition: all 0.2s ease-in-out; /* 平滑过渡效果 */
+  cursor: pointer; /* 鼠标指针样式 */
+  display: inline-flex; /* 允许内容居中 */
+  align-items: center;
+  justify-content: center;
+  border: none; /* 无默认边框 */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 阴影 */
+  min-width: 100px; /* 确保按钮有最小宽度 */
+}
+
+/* 蓝色按钮样式 (主要操作) */
+.button-blue {
+  background-color: #3b82f6; /* 蓝色背景 */
+  color: white; /* 白色文字 */
+}
+
+.button-blue:hover {
+  background-color: #2563eb; /* 悬停时更深蓝色 */
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); /* 悬停时增强阴影 */
+  transform: translateY(-1px); /* 悬停时轻微上浮 */
+}
+
+.button-blue:active {
+  background-color: #1d4ed8; /* 点击时更深蓝色 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(0);
+}
+
+/* 黄色按钮样式 (次要操作，如“重做”) */
+.button-yellow {
+  background-color: #fcd34d; /* 黄色背景 */
+  color: #78350f; /* 深棕色文字 */
+}
+
+.button-yellow:hover {
+  background-color: #fbbf24; /* 悬停时更深黄色 */
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.button-yellow:active {
+  background-color: #f59e0b; /* 点击时更深黄色 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(0);
+}
+
+/* 绿色按钮样式 (如“阅读并补全”或成功操作) */
+.button-green {
+  background-color: #22c55e; /* 绿色背景 */
+  color: white; /* 白色文字 */
+}
+
+.button-green:hover {
+  background-color: #16a34a; /* 悬停时更深绿色 */
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.button-green:active {
+  background-color: #15803d; /* 点击时更深绿色 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(0);
+}
+
+/* 禁用按钮样式 */
+.button-disabled {
+  background-color: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* 单个字符填空样式 */
+.char-input {
+  width: 24px;
+  height: 32px;
+  text-align: center;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  margin: 0 2px;
+  padding: 2px;
+  font-weight: 500;
+  color: #1f2937;
+  background-color: #f9fafb;
+  transition: border-color 0.2s, background-color 0.2s;
+  outline: none; /* 移除默认外边框 */
+  font-size: 1.125rem; /* 确保字体大小 */
+}
+
+.char-input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+  background-color: #fff;
+}
+
+.char-input:disabled {
+  background-color: #e5e7eb;
+  cursor: not-allowed;
+  opacity: 0.7; /* 禁用时稍微透明 */
+}
+
+/* 正确输入反馈样式 */
+.char-input.correct {
+  border-color: #10b981;
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+/* 错误输入反馈样式 */
+.char-input.incorrect {
+  border-color: #ef4444;
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* 主内容卡片样式（与 index.html 中的 Tailwind 类配合） */
+/* 注意：min-height 和 padding 已在 index.html 的 Tailwind 类中定义 */
+/* 这里仅添加额外的自定义覆盖或微调 */
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .button-base {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+  .char-input {
+    width: 20px;
+    height: 28px;
+    font-size: 1rem; /* 调整移动端字体 */
+  }
+  .main-content-card {
+      padding: 1.5rem;
+      min-height: 380px;
+  }
+}
+
+@media (max-width: 480px) {
+  .char-input {
+    width: 18px;
+    height: 26px;
+    font-size: 0.95rem; /* 进一步调整字体 */
+  }
+  .main-content-card {
+      padding: 1rem;
+      min-height: 320px;
+  }
+}
