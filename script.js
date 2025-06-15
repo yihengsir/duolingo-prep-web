@@ -67,127 +67,161 @@ function formatTime(s) {
     return `${minutes}:${seconds}`;
 }
 
-// ==================== 渲染函数 (核心！) ====================
-function render() {
-    let htmlContent = '';
-    const currentQuestion = questionsData[currentQuestionIndex]; // 获取当前题目
+// ==================== 状态逻辑函数 (在 render 之前定义) ====================
 
-    if (gameState === 'welcome') {
-        htmlContent = `
-            <div class="text-center flex flex-col items-center w-full h-full justify-center">
-                <img src="unnamed.png" alt="Duolingo Logo" class="w-36 h-36 rounded-full mb-8 shadow-lg" onerror="this.onerror=null;this.src='https://placehold.co/144x144/E0E0E0/333333?text=Logo+Missing';">
-                <h1 class="text-3xl font-bold text-blue-600 mb-4">Duolingo DET Prep with Fengfeng</h1>
-                <input id="invitationCodeInput" type="text"
-                    class="px-4 py-2 border border-gray-300 rounded-md w-60 text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                    placeholder="请输入邀请码" value="${invitationCodeInput}">
-                ${invitationCodeError ? `<p class="text-red-500 text-sm mt-2">${invitationCodeError}</p>` : ''}
-                <button id="enterButton" class="button-base button-blue mt-4">进入</button>
-            </div>
-        `;
-    } else if (gameState === 'questionTypeSelection') {
-        htmlContent = `
-            <div class="text-center flex flex-col items-center w-full h-full justify-center">
-                <h2 class="text-2xl font-bold text-blue-600 mb-6">选择题型</h2>
-                <button id="readAndCompleteButton" class="button-base button-green mb-4 px-12 py-4 text-xl">阅读并补全</button>
-                <p class="text-gray-500 text-sm mt-4">更多题型即将推出！</p>
-            </div>
-        `;
-    } else if (gameState === 'readAndComplete') {
-        if (!currentQuestion) {
-            htmlContent = `
-                <div class="text-center text-red-600 text-lg font-semibold w-full h-full flex items-center justify-center">
-                    题目数据错误或未加载。请检查 questions.json 文件内容。
-                </div>
-            `;
-        } else {
-            const allFilled = inputValues.every(char => char.trim() !== '');
-            const canCheck = allFilled && isCorrect === null && timeLeft > 0;
-
-            let blanksHtml = '';
-            const parts = currentQuestion.text.split('[BLANK]');
-            let charInputIdx = 0; // 填空索引
-            parts.forEach((part, i) => {
-                blanksHtml += `<span class="whitespace-pre-wrap">${part}</span>`;
-                if (charInputIdx < currentQuestion.answers.length) {
-                    const showResult = isCorrect !== null || timeLeft === 0;
-                    const filledChar = inputValues[charInputIdx] || '';
-                    const isCorrectChar = filledChar.toLowerCase() === currentQuestion.answers[charInputIdx].toLowerCase();
-                    const inputClass = `char-input ${showResult ? (isCorrectChar ? 'correct' : 'incorrect') : ''}`;
-                    const disabledAttr = showResult ? 'disabled' : '';
-
-                    blanksHtml += `
-                        <input type="text" maxlength="1" class="${inputClass}"
-                            value="${filledChar}" data-index="${charInputIdx}" ${disabledAttr} tabIndex="${charInputIdx + 1}">
-                    `;
-                    charInputIdx++;
-                }
-            });
-
-            let feedbackHtml = '';
-            if (feedbackMessage) {
-                const feedbackColorClass = isCorrect ? 'text-green-600' : 'text-red-600';
-                feedbackHtml = `<p class="mt-6 text-center text-lg font-semibold ${feedbackColorClass}">${feedbackMessage}</p>`;
-            }
-
-            let correctAnswerHtml = '';
-            if (showCorrectAnswer) {
-                let correctFullTextHtml = '';
-                const correctParts = currentQuestion.text.split('[BLANK]');
-                let correctAnsIdx = 0;
-                correctParts.forEach((part, i) => {
-                    correctFullTextHtml += `<span class="whitespace-pre-wrap">${part}</span>`;
-                    if (correctAnsIdx < currentQuestion.answers.length) {
-                        correctFullTextHtml += `<span class="text-blue-600 font-bold underline">${currentQuestion.answers[correctAnsIdx]}</span>`;
-                        correctAnsIdx++;
-                    }
-                });
-
-                correctAnswerHtml = `
-                    <div class="mt-6 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-md shadow-sm w-full">
-                        <p class="font-semibold mb-2">正确答案:</p>
-                        <p class="whitespace-pre-wrap text-lg">${correctFullTextHtml}</p>
-                    </div>
-                `;
-            }
-
-            htmlContent = `
-                <div class="absolute top-4 left-4">
-                    <button id="prevButton" class="button-base bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm ${currentQuestionIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentQuestionIndex === 0 ? 'disabled' : ''}>上一题</button>
-                </div>
-                <div class="absolute top-4 right-4">
-                    <button id="nextButton" class="button-base bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm ${currentQuestionIndex === questionsData.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentQuestionIndex === questionsData.length - 1 ? 'disabled' : ''}>下一题</button>
-                </div>
-
-                <div class="text-center text-blue-600 text-xl font-bold mb-1 w-full">Duolingo DET Prep - 阅读并补全</div>
-                <div class="text-center text-gray-500 text-sm mb-2 w-full">${currentQuestion.title}</div>
-                <div class="text-center text-sm text-gray-500 mb-4 w-full">
-                    剩余时间: <span class="text-blue-600 font-bold">${formatTime(timeLeft)}</span>　 第 ${currentQuestionIndex + 1} 题 / 共 ${questionsData.length} 题
-                </div>
-
-                <div id="blanks-container" class="flex flex-wrap gap-1 leading-relaxed justify-start items-baseline text-lg w-full mb-6">${blanksHtml}</div>
-
-                ${feedbackHtml}
-                ${correctAnswerHtml}
-
-                <div class="text-center mt-6 flex justify-center gap-4 w-full">
-                    <button id="checkAnswerButton" class="button-base ${canCheck ? 'button-blue' : 'button-disabled opacity-40'}" ${canCheck ? '' : 'disabled'}>检查答案</button>
-                    <button id="resetButton" class="button-base button-yellow">重做</button>
-                </div>
-            `;
-        }
+function resetQuestionState() {
+    const currentQ = questionsData[currentQuestionIndex];
+    if (!currentQ || !Array.isArray(currentQ.answers)) {
+        console.warn("Cannot reset state: questionsData not ready.");
+        return;
+    }
+    inputValues = Array(currentQ.answers.length).fill('');
+    feedbackMessage = '';
+    isCorrect = null;
+    showCorrectAnswer = false;
+    timeLeft = TIMER_DURATION;
+    
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
     }
 
-    mainCard.innerHTML = htmlContent; // 更新 DOM
+    if (gameState === 'readAndComplete') {
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timeLeft = 0;
+                if (isCorrect === null) {
+                    checkAnswer();
+                }
+            }
+            render(); // 每秒渲染一次以更新时间
+        }, 1000);
+    }
+}
 
-    // 每次渲染后，重新绑定事件监听器和收集输入框引用
-    bindEventListeners();
-    collectInputRefs(); // 确保在 DOM 更新后收集引用
+function handleCharChange(e, index) {
+    const val = e.target.value.slice(0, 1).toLowerCase();
+    inputValues[index] = val; // 直接修改数组
+    feedbackMessage = '';
+    isCorrect = null;
+    showCorrectAnswer = false;
+    render(); // 重新渲染以更新输入框内容和状态
 
-    // 调试辅助
-    // console.log("Current gameState:", gameState);
-    // console.log("Current inputValues:", inputValues);
-    // console.log("Current inputRefsMap size:", inputRefsMap.size);
-    // console.log("First input ref in map:", inputRefsMap.get(0));
+    // 自动聚焦到下一个输入框
+    if (val && index < questionsData[currentQuestionIndex].answers.length - 1) {
+        const nextInput = inputRefsMap.get(index + 1);
+        if (nextInput) {
+            nextInput.focus();
+        }
+    }
+}
+
+function handleCharKeyDown(e, index) {
+    if (e.key === 'Backspace') {
+        if (inputValues[index] === '' && index > 0) {
+            inputValues[index - 1] = ''; // 清空前一个
+            const prevInput = inputRefsMap.get(index - 1);
+            if (prevInput) prevInput.focus();
+            e.preventDefault();
+        } else if (inputValues[index] !== '') {
+            inputValues[index] = ''; // 清空当前
+            e.preventDefault();
+        }
+        feedbackMessage = '';
+        isCorrect = null;
+        showCorrectAnswer = false;
+        render(); // 重新渲染以更新输入框内容和状态
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+        inputRefsMap.get(index - 1)?.focus();
+    } else if (e.key === 'ArrowRight' && index < questionsData[currentQuestionIndex].answers.length - 1) {
+        inputRefsMap.get(index + 1)?.focus();
+    }
+}
+
+function checkAnswer() {
+    const currentQ = questionsData[currentQuestionIndex];
+    if (!currentQ || !Array.isArray(currentQ.answers) || inputValues.length !== currentQ.answers.length) {
+        feedbackMessage = '题目数据未加载或输入框数量不匹配，无法检查。';
+        isCorrect = false;
+        render();
+        return;
+    }
+
+    const allFilled = inputValues.every(char => char.trim() !== '');
+    if (!allFilled && timeLeft > 0) {
+        feedbackMessage = '请填写所有空白处才能检查。';
+        isCorrect = false;
+        render();
+        return;
+    }
+
+    if (timerInterval) clearInterval(timerInterval);
+    const allCorrect = currentQ.answers.every((correctChar, i) =>
+        (inputValues[i] || '').toLowerCase() === correctChar.toLowerCase()
+    );
+    isCorrect = allCorrect;
+    showCorrectAnswer = true;
+    feedbackMessage = allCorrect ? '所有填空都正确！' : '部分填空有误，请检查。';
+    render(); // 重新渲染以显示结果
+}
+
+function goToNext() {
+    if (currentQuestionIndex < questionsData.length - 1) {
+        currentQuestionIndex++;
+        resetQuestionState();
+        render(); // 渲染新题目
+        // 尝试在 DOM 更新后立即聚焦
+        requestAnimationFrame(() => {
+            const firstInput = inputRefsMap.get(0);
+            if (firstInput) {
+                firstInput.focus();
+            }
+        });
+    }
+}
+
+function goToPrev() {
+    if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        resetQuestionState();
+        render(); // 渲染新题目
+        // 尝试在 DOM 更新后立即聚焦
+        requestAnimationFrame(() => {
+            const firstInput = inputRefsMap.get(0);
+            if (firstInput) {
+                firstInput.focus();
+            }
+        });
+    }
+}
+
+function handleInvitationCodeInputKeyDown(event) {
+    if (event.key === 'Enter') {
+        handleInvitationCodeSubmit();
+    }
+}
+
+function handleInvitationCodeSubmit() {
+    if (invitationCodeInput === INVITATION_CODE) {
+        gameState = 'questionTypeSelection';
+        invitationCodeError = '';
+    } else {
+        invitationCodeError = '邀请码错误，请重试。';
+    }
+    render(); // 重新渲染以更新界面
+}
+
+function resetQuestionStateAndRender() {
+    resetQuestionState();
+    render(); // 重新渲染以显示新题目
+    requestAnimationFrame(() => { // 再次尝试聚焦
+        const firstInput = inputRefsMap.get(0);
+        if (firstInput) {
+            firstInput.focus();
+        }
+    });
 }
 
 // ==================== 事件绑定与引用收集 ====================
@@ -195,10 +229,9 @@ function bindEventListeners() {
     // 欢迎界面
     const invitationCodeInputEl = document.getElementById('invitationCodeInput');
     if (invitationCodeInputEl) {
+        // 确保输入框的 oninput 和 onkeydown 事件在 DOM 元素存在时绑定
         invitationCodeInputEl.oninput = (e) => { invitationCodeInput = e.target.value; };
-        invitationCodeInputEl.onkeydown = (e) => { if (e.key === 'Enter') handleInvitationCodeSubmit(); };
-        // 尝试在欢迎界面自动聚焦
-        // invitationCodeInputEl.focus(); // 不在这里直接focus，等待render完成后
+        invitationCodeInputEl.onkeydown = handleInvitationCodeInputKeyDown;
     }
     const enterButton = document.getElementById('enterButton');
     if (enterButton) {
@@ -210,13 +243,13 @@ function bindEventListeners() {
     if (readAndCompleteButton) {
         readAndCompleteButton.onclick = () => {
             gameState = 'readAndComplete';
-            // 立即重置状态并渲染，以确保输入框正确生成
-            resetQuestionState();
-            render();
-            // 在DOM更新后尝试聚焦第一个输入框
+            resetQuestionState(); // 重置状态
+            render(); // 立即渲染以生成输入框
+            // 确保 DOM 更新后立即聚焦第一个输入框
             requestAnimationFrame(() => {
-                if (inputRefsMap.get(0)) {
-                    inputRefsMap.get(0).focus();
+                const firstInput = inputRefsMap.get(0);
+                if (firstInput) {
+                    firstInput.focus();
                 } else {
                     console.warn("Could not focus first input after state change.");
                 }
@@ -224,8 +257,7 @@ function bindEventListeners() {
         };
     }
 
-    // 阅读并补全界面 - 填空输入框事件
-    // 注意：事件委托或在 render 后立即绑定
+    // 阅读并补全界面 - 填空输入框事件委托
     const blanksContainer = document.getElementById('blanks-container');
     if (blanksContainer) {
         blanksContainer.addEventListener('input', (e) => {
@@ -238,6 +270,12 @@ function bindEventListeners() {
             if (e.target.classList.contains('char-input')) {
                 const index = parseInt(e.target.dataset.index);
                 handleCharKeyDown(e, index);
+            }
+        });
+        // 为输入框添加点击聚焦事件，防止浏览器/iframe问题
+        blanksContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('char-input')) {
+                e.target.focus();
             }
         });
     }
@@ -254,96 +292,23 @@ function bindEventListeners() {
     if (resetButton) resetButton.onclick = resetQuestionStateAndRender;
 }
 
+// 收集输入框的 DOM 引用
 function collectInputRefs() {
     inputRefsMap.clear(); // 每次收集前清空
     const charInputs = document.querySelectorAll('.char-input');
     charInputs.forEach(inputEl => {
         const index = parseInt(inputEl.dataset.index);
-        if (inputEl && !isNaN(index)) { // 确保元素存在且索引有效
+        if (inputEl && !isNaN(index)) {
             inputRefsMap.set(index, inputEl);
         }
     });
+    // 调试辅助
     // console.log("Input refs map after collection:", inputRefsMap);
 }
 
-// ==================== 状态逻辑函数 (直接修改变量并调用 render) ====================
-function resetQuestionState() {
-    const currentQ = questionsData[currentQuestionIndex];
-    if (!currentQ || !Array.isArray(currentQ.answers)) {
-        console.warn("Cannot reset state: questionsData not ready.");
-        return;
-    }
-    inputValues = Array(currentQ.answers.length).fill('');
-    feedbackMessage = '';
-    isCorrect = null;
-    showCorrectAnswer = false;
-    timeLeft = TIMER_DURATION;
-    
-    // 清除现有计时器
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
-
-    // 仅当在答题状态时才启动计时器
-    if (gameState === 'readAndComplete') {
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                timeLeft = 0;
-                if (isCorrect === null) {
-                    checkAnswer();
-                }
-            }
-            render(); // 每秒渲染一次以更新时间
-        }, 1000);
-    }
-}
-
-function resetQuestionStateAndRender() {
-    resetQuestionState();
-    render(); // 重新渲染以显示新题目
-    requestAnimationFrame(() => { // 再次尝试聚焦
-        const firstInput = inputRefsMap.get(0);
-        if (firstInput) {
-            firstInput.focus();
-        }
-    });
-}
-
-// ==================== 导航函数 ====================
-function goToNext() {
-    if (currentQuestionIndex < questionsData.length - 1) {
-        currentQuestionIndex++;
-        resetQuestionState();
-        render(); // 渲染新题目
-        requestAnimationFrame(() => { // 再次尝试聚焦
-            const firstInput = inputRefsMap.get(0);
-            if (firstInput) {
-                firstInput.focus();
-            }
-        });
-    }
-}
-
-function goToPrev() {
-    if (currentQuestionIndex > 0) {
-        currentQuestionIndex--;
-        resetQuestionState();
-        render(); // 渲染新题目
-        requestAnimationFrame(() => { // 再次尝试聚焦
-            const firstInput = inputRefsMap.get(0);
-            if (firstInput) {
-                firstInput.focus();
-            }
-        });
-    }
-}
-
 // ==================== 初始化与全局运行 ====================
+// 在 DOM 完全加载后首次渲染页面和绑定初始事件
 document.addEventListener('DOMContentLoaded', () => {
-    // 首次渲染欢迎界面
     render();
     // 尝试在欢迎界面的邀请码输入框自动聚焦
     const invitationInput = document.getElementById('invitationCodeInput');
